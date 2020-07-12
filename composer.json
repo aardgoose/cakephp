@@ -53,7 +53,7 @@
         "cakephp/cakephp-codesniffer": "^4.0",
         "mikey179/vfsstream": "^1.6",
         "paragonie/csp-builder": "^2.3",
-        "phpunit/phpunit": "~8.5.0"
+        "phpunit/phpunit": "^8.5 || ^9.3"
     },
     "autoload": {
         "psr-4": {
@@ -117,5 +117,7 @@
     "config": {
         "sort-packages": true,
         "process-timeout": 900
-    }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
 }
