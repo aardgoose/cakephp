@@ -228,6 +228,19 @@ class ConnectionTest extends TestCase
         $this->assertInstanceOf('PDOException', $e->getPrevious());
     }
 
+    public function testConnectRetry()
+    {
+        $connection = new Connection(['driver' => 'RetryDriver']);
+        $this->assertInstanceOf('TestApp\Database\Driver\RetryDriver', $connection->getDriver());
+
+        try {
+            $connection->connect();
+        } catch (MissingConnectionException $e) {
+        }
+
+        $this->assertSame(1, $connection->getDriver()->getConnectRetries());
+    }
+
     /**
      * Tests creation of prepared statements
      *

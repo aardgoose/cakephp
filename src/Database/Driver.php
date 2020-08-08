@@ -38,6 +38,21 @@ abstract class Driver implements DriverInterface
     protected const MAX_ALIAS_LENGTH = null;
 
     /**
+     * @var int[] Connection retry PDOException error codes
+     */
+    protected const CONNECT_RETRY_ERROR_CODES = [];
+
+    /**
+     * @var int Seconds between connection retry attempts
+     */
+    protected const CONNECT_RETRY_INTERVAL = 0;
+
+    /**
+     * @var int Maximum number of connection retry attempts
+     */
+    protected const CONNECT_RETRY_ATTEMPTS = 0;
+
+    /**
      * Instance of PDO.
      *
      * @var \PDO
@@ -82,6 +97,13 @@ abstract class Driver implements DriverInterface
     protected $_version;
 
     /**
+     * The last connection retry count
+     *
+     * @var int
+     */
+    protected $connectRetries = 0;
+
+    /**
      * Constructor
      *
      * @param array $config The configuration for the driver.
@@ -110,24 +132,35 @@ abstract class Driver implements DriverInterface
      */
     protected function _connect(string $dsn, array $config): bool
     {
-        try {
-            $connection = new PDO(
-                $dsn,
-                $config['username'] ?: null,
-                $config['password'] ?: null,
-                $config['flags']
-            );
-        } catch (PDOException $e) {
-            throw new MissingConnectionException(
-                [
-                    'driver' => App::shortName(static::class, 'Database/Driver'),
-                    'reason' => $e->getMessage(),
-                ],
-                null,
-                $e
-            );
+        $this->connectRetries = 0;
+        while (true) {
+            try {
+                $this->setConnection(new PDO(
+                    $dsn,
+                    $config['username'] ?: null,
+                    $config['password'] ?: null,
+                    $config['flags']
+                ));
+                break;
+            } catch (PDOException $e) {
+                if (
+                    $this->connectRetries < static::CONNECT_RETRY_ATTEMPTS &&
+                    in_array($e->getCode(), static::CONNECT_RETRY_ERROR_CODES)
+                ) {
+                    $this->connectRetries++;
+                    sleep(static::CONNECT_RETRY_INTERVAL);
+                } else {
+                    throw new MissingConnectionException(
+                        [
+                            'driver' => App::shortName(static::class, 'Database/Driver'),
+                            'reason' => $e->getMessage(),
+                        ],
+                        (int)$e->getCode(),
+                        $e
+                    );
+                }
+            }
         }
-        $this->setConnection($connection);
 
         return true;
     }
@@ -484,6 +517,16 @@ abstract class Driver implements DriverInterface
     public function getMaxAliasLength(): ?int
     {
         return static::MAX_ALIAS_LENGTH;
+    }
+
+    /**
+     * Returns the number of connection retry attempts made.
+     *
+     * @return int
+     */
+    public function getConnectRetries(): int
+    {
+        return $this->connectRetries;
     }
 
     /**

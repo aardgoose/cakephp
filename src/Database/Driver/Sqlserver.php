@@ -47,6 +47,23 @@ class Sqlserver extends Driver
     protected const MAX_ALIAS_LENGTH = 128;
 
     /**
+     * @inheritDoc
+     */
+    protected const CONNECT_RETRY_ERROR_CODES = [
+        40613, // Azure Sql Database paused
+    ];
+
+    /**
+     * @inheritDoc
+     */
+    protected const CONNECT_RETRY_INTERVAL = 5;
+
+    /**
+     * @inheritDoc
+     */
+    protected const CONNECT_RETRY_ATTEMPTS = 5;
+
+    /**
      * Base configuration settings for Sqlserver driver
      *
      * @var array
